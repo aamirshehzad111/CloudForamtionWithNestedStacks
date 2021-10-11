@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS RDS Clutser, Instance and Subnet Group for dev environment.
+Parameters:
+  Environment:
+    Type: String
+    Default: develop
+  Engine:
+    Type: String
+    Default: mysql
+  EngineVersion:
+    Type: String
+    Default: 5.7.21
+  InstanceType:
+    Type: String
+    Default: db.t2.micro
+  AllocatedStorage:
+    Type: Number
+    Default: 20
+  PubliclyAccessible:
+    Type: Boolean
+    Default: false
+  AutoMinorVersionUpgrade:
+    Type: Boolean
+    Default: false
+  DatabaseName:
+    Type: String
+    Default: wordpress
+  MasterUserName:
+    Type: String
+    Default: admin
+  PrivateSubnets:
+    Type: String
+  VPCCidr:
+    Type: String
+    
+
+Resources:
+  SubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for rds
+      SubnetIds: !Split [ "," , !Ref "PrivateSubnets" ]
+      Tags:
+        - Key: Env
+          Value: !Ref Environment
+
+  RDS:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    DependsOn:
+      - SubnetGroup
+    Properties:
+      AllocatedStorage: !Ref AllocatedStorage
+      AutoMinorVersionUpgrade: !Ref AutoMinorVersionUpgrade
+      DBName: !Ref DatabaseName
+      DBInstanceClass: !Ref InstanceType
+      DBInstanceIdentifier: !Sub "wp-{Environment}"
+      DBSubnetGroupName: !Ref SubnetGroup
+      Engine: !Ref Engine
+      EngineVersion: !Ref EngineVersion
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: '{{resolve:ssm-secure:RDS_PASSWORD:1}}'
+      PubliclyAccessible: !Ref PubliclyAccessible
+      PreferredBackupWindow: "06:59-07:29"
+      PreferredMaintenanceWindow: "fri:06:32-fri:07:02"
+      VPCSecurityGroups: 
+        - !Ref SecurityGroup.GroupId
+      Tags:
+        - Key: Env
+          Value: !Ref Environment
+  
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for rds instance
+      VpcId:
+        Fn::ImportValue:
+              Fn::Sub: "${Environment}-VPCId"
+      SecurityGroupIngress:
+        - FromPort: 3306
+          IpProtocol: tcp
+          ToPort: 3306
+          CidrIp: !Ref VPCCidr
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: -1
+          IpProtocol: -1
+          ToPort: -1
+      Tags:
+        - Key: Env
+          Value: !Ref Environment
