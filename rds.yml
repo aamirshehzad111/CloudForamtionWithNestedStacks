@@ -17,10 +17,10 @@ Parameters:
     Type: Number
     Default: 20
   PubliclyAccessible:
-    Type: Boolean
+    Type: String
     Default: false
   AutoMinorVersionUpgrade:
-    Type: Boolean
+    Type: String
     Default: false
   DatabaseName:
     Type: String
@@ -31,6 +31,8 @@ Parameters:
   PrivateSubnets:
     Type: String
   VPCCidr:
+    Type: String
+  VPCId:
     Type: String
     
 
@@ -54,17 +56,17 @@ Resources:
       AutoMinorVersionUpgrade: !Ref AutoMinorVersionUpgrade
       DBName: !Ref DatabaseName
       DBInstanceClass: !Ref InstanceType
-      DBInstanceIdentifier: !Sub "wp-{Environment}"
+      DBInstanceIdentifier: !Sub "wp-${Environment}"
       DBSubnetGroupName: !Ref SubnetGroup
       Engine: !Ref Engine
       EngineVersion: !Ref EngineVersion
-      MasterUsername: !Ref DBUsername
+      MasterUsername: !Ref MasterUserName
       MasterUserPassword: '{{resolve:ssm-secure:RDS_PASSWORD:1}}'
       PubliclyAccessible: !Ref PubliclyAccessible
-      PreferredBackupWindow: "06:59-07:29"
-      PreferredMaintenanceWindow: "fri:06:32-fri:07:02"
+      PreferredBackupWindow: "00:59-01:29"
+      PreferredMaintenanceWindow: "fri:11:02-fri:11:32"
       VPCSecurityGroups: 
-        - !Ref SecurityGroup.GroupId
+        - !Ref SecurityGroup
       Tags:
         - Key: Env
           Value: !Ref Environment
@@ -74,9 +76,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for rds instance
-      VpcId:
-        Fn::ImportValue:
-              Fn::Sub: "${Environment}-VPCId"
+      VpcId: !Ref VPCId
       SecurityGroupIngress:
         - FromPort: 3306
           IpProtocol: tcp

@@ -18,18 +18,6 @@ Parameters:
   Ec2AmiId:
     Type: String
     Default: "ami-074cce78125f09d61"
-    
-  # InstaceTypeParam:
-  #   Type: "String"
-  #   Default: "t2.micro"
-  #   AllowedValues: 
-  #     - "t2.micro"
-  #     - "m3.medium"
-  #     - "m3.large"
-  #     - "c3.large"
-  #     - "c3.xlarge"
-  #   ConstraintDescription: Must be one of them
-
 
 
 Resources:
@@ -56,6 +44,7 @@ Resources:
   AutoScallingStack:
     Type: AWS::CloudFormation::Stack
     DependsOn: 
+      - RDS
       - LoadBalancerStack
       - EfsStack
     Properties: 
@@ -68,39 +57,15 @@ Resources:
         VPCId: !Ref VPCId
         VPCCidr: !Ref VPCCidr
 
-
-  # MyAutoScallingStack:
-  #   Type: AWS::CloudFormation::Stack
-  #   DependsOn: MyLoadBalancerStack
-  #   Properties: 
-  #     TemplateURL: "https://cf-templates-z0sc5gmdoroj-us-east-2.s3.us-east-2.amazonaws.com/asg.yml"
-  #     TimeoutInMinutes: 30
-  #     Parameters: 
-  #       RoleName: !Ref "RoleName"
-  #       InstaceTypeParam: !Ref "InstaceTypeParam"
-  #       KeyName: !Ref "KeyName"
-
-
-  # MyDbStack:
-  #   Type: AWS::CloudFormation::Stack
-  #   DependsOn: MyVpcStack
-  #   Properties:  
-  #     TemplateURL: "https://cf-templates-10v3kub72h1yp-us-west-1.s3-us-west-1.amazonaws.com/DBServer.yaml"
-  #     TimeoutInMinutes: 30
-  #     Parameters: 
-  #       InstaceTypeParam: !Ref "InstaceTypeParam"
-  #       KeyName: !Ref "KeyName"
-  #       AZsSelection: !GetAtt "MyVpcStack.Outputs.PVSUB01r"
-  #       SG: !GetAtt "MyVpcStack.Outputs.DBSGr"
-
-
-  
-  # MyLoadBalancerStack:
-  #   Type: AWS::CloudFormation::Stack
-  #   DependsOn: MyVpcStack
-  #   Properties:  
-  #     TemplateURL: "https://cf-templates-10v3kub72h1yp-us-west-1.s3-us-west-1.amazonaws.com/AppLoadBalancer.yaml"
-  #     TimeoutInMinutes: 30
+  RDS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: "https://cf-templates-z0sc5gmdoroj-us-east-2.s3.us-east-2.amazonaws.com/rds.yml"
+      TimeoutInMinutes: 30
+      Parameters:
+        VPCId: !Ref VPCId
+        VPCCidr: !Ref VPCCidr
+        PrivateSubnets: !Join [",", !Ref PrivateSubnets]
 
           
 
