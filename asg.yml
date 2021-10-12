@@ -33,7 +33,7 @@ Parameters:
     Description: Minimum number of instances for the ECS cluster
   MaxClusterSize:
     Type: Number
-    Default: 5
+    Default: 1
     Description: Maximun number of instances for the ECS cluster
   VPCId:
     Type: String
@@ -149,6 +149,29 @@ Resources:
             yum install -y aws-cfn-bootstrap awscli git amazon-efs-utils python-pip
             mkdir -p /var/www/html
             mount -t efs ${EfsId}:/ /var/www/html
+            DB_NAME="wordpress"
+            DB_PASSWORD="sadsadada7d8a"
+            DB_USER="admin"
+            DB_HOST=$(aws ssm get-parameter --name 'DB_HOST' --query 'Parameter.Value' --region=us-east-2)
+            sudo yum install -y httpd
+            sudo systemctl start httpd
+            sudo systemctl enable httpd
+            wget https://wordpress.org/latest.tar.gz
+            tar -xzf latest.tar.gz
+            cd wordpress
+            cp wp-config-sample.php wp-config.php
+            sudo amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
+            mysql -h $DB_HOST -u $DB_USER -p"$DB_PASSWORD" -e "CREATE DATABASE $DB_NAME;"
+            cd /var/www/
+            if [ -d "html" ];then; sudo cp -r /wordpress/* /var/www/html/;fi
+            sed -i "s/database_name_here/$DB_NAME/g" /var/www/html/wp-config.php
+            sed -i "s/username_here/$DB_USER/g" /var/www/html/wp-config.php
+            sed -i "s/password_here/$DB_PASSWORD/g" /var/www/html/wp-config.php
+            sed -i "s/localhost/$DB_PASSWORD/g" /var/www/html/wp-config.php
+            cd /
+            sudo chown -R apache:apache /var/www/
+            sed -i '/<Directory "\/var\/www\/html">/,/<\/Directory>/ s/AllowOverride None/AllowOverride all/' /etc/httpd/conf/httpd.conf
+            sudo systemctl restart httpd
           - EfsId:
               Fn::ImportValue:
                 Fn::Sub: "${Environment}-EFSId" 

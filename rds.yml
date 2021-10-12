@@ -18,7 +18,10 @@ Parameters:
     Default: 20
   PubliclyAccessible:
     Type: String
-    Default: false
+    Default: true
+  StorageType:
+    Type: String
+    Default: gp2
   AutoMinorVersionUpgrade:
     Type: String
     Default: false
@@ -60,6 +63,7 @@ Resources:
       DBSubnetGroupName: !Ref SubnetGroup
       Engine: !Ref Engine
       EngineVersion: !Ref EngineVersion
+      StorageType: !Ref StorageType
       MasterUsername: !Ref MasterUserName
       MasterUserPassword: '{{resolve:ssm-secure:RDS_PASSWORD:1}}'
       PubliclyAccessible: !Ref PubliclyAccessible
@@ -90,3 +94,15 @@ Resources:
       Tags:
         - Key: Env
           Value: !Ref Environment
+  DBHost:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: DB_HOST
+      Type: String
+      Value: !GetAtt RDS.Endpoint.Address
+
+Outputs:
+  DbHost:
+    Value: !GetAtt RDS.Endpoint.Address
+    Export:
+      Name: !Sub "${Environment}-DBHOST"
