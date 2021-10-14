@@ -66,10 +66,10 @@ Resources:
         FromPort: 2049
         ToPort: 2049
         CidrIp: !Ref VPCCidr
-      - IpProtocol: tcp
-        FromPort: 2049
-        ToPort: 2049
-        CidrIp: "0.0.0.0/0"
+      # - IpProtocol: tcp
+      #   FromPort: 2049
+      #   ToPort: 2049
+      #   CidrIp: "0.0.0.0/0"
       SecurityGroupEgress:
       - { IpProtocol: -1, CidrIp: "0.0.0.0/0" }
       Tags:

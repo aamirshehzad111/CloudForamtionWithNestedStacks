@@ -45,6 +45,12 @@ Parameters:
     Type: String   
     Description: Environment name to append to resources names and tags
     Default: develop
+  DatabaseName:
+    Type: String
+    Default: wordpress
+  MasterUserName:
+    Type: String
+    Default: admin
       
 
 Resources:
@@ -155,10 +161,10 @@ Resources:
             yum install -y aws-cfn-bootstrap awscli git amazon-efs-utils python-pip
             mkdir -p /var/www/html
             mount -t efs ${EfsId}:/ /var/www/html
-            DB_NAME="wordpress"
-            DB_PASSWORD=$(aws ssm get-parameter --name 'RDS_PASSWORD' --query 'Parameter.Value' --region=us-east-2)
-            DB_USER="admin"
-            DB_HOST=$(aws ssm get-parameter --name 'DB_HOST' --query 'Parameter.Value' --region=us-east-2)
+            DB_NAME=${DatabaseName}
+            DB_PASSWORD=$(aws ssm get-parameter --name 'RDS_PASSWORD' --with-decryption --query 'Parameter.Value' --region=us-east-1)
+            DB_USER=${MasterUserName}
+            DB_HOST=$(aws ssm get-parameter --name 'DB_HOST' --query 'Parameter.Value' --region=us-east-1)
             sudo yum install -y httpd
             sudo systemctl start httpd
             sudo systemctl enable httpd
@@ -169,13 +175,8 @@ Resources:
             sudo amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
             mysql -h $DB_HOST -u $DB_USER -p"$DB_PASSWORD" -e "CREATE DATABASE $DB_NAME;"
             cd /var/www/
-            echo $DB_NAME
-            echo $DB_USER
-            echo $DB_HOST
             DB_HOST=$(echo "$DB_HOST" | tr -d '"')
             DB_PASSWORD=$(echo "$DB_PASSWORD" | tr -d '"')
-            echo $DB_PASSWORD
-            echo $DB_HOST
             if [ -z "$(ls -A html)" ];then sudo cp -r /wordpress/* /var/www/html/;fi
             sed -i "s/database_name_here/$DB_NAME/g" /var/www/html/wp-config.php
             sed -i "s/username_here/$DB_USER/g" /var/www/html/wp-config.php
