@@ -104,6 +104,12 @@ Resources:
         ToPort: 22
         CidrIp: !Ref VPCCidr
       - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        SourceSecurityGroupId: 
+          Fn::ImportValue:
+            Fn::Sub: "${Environment}-LoadBalancerSecurityGroupId"
+      - IpProtocol: tcp
         FromPort: 1024
         ToPort: 65535
         SourceSecurityGroupId:
@@ -150,7 +156,7 @@ Resources:
             mkdir -p /var/www/html
             mount -t efs ${EfsId}:/ /var/www/html
             DB_NAME="wordpress"
-            DB_PASSWORD="sadsadada7d8a"
+            DB_PASSWORD=$(aws ssm get-parameter --name 'RDS_PASSWORD' --query 'Parameter.Value' --region=us-east-2)
             DB_USER="admin"
             DB_HOST=$(aws ssm get-parameter --name 'DB_HOST' --query 'Parameter.Value' --region=us-east-2)
             sudo yum install -y httpd
@@ -163,11 +169,18 @@ Resources:
             sudo amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
             mysql -h $DB_HOST -u $DB_USER -p"$DB_PASSWORD" -e "CREATE DATABASE $DB_NAME;"
             cd /var/www/
-            if [ -d "html" ];then; sudo cp -r /wordpress/* /var/www/html/;fi
+            echo $DB_NAME
+            echo $DB_USER
+            echo $DB_HOST
+            DB_HOST=$(echo "$DB_HOST" | tr -d '"')
+            DB_PASSWORD=$(echo "$DB_PASSWORD" | tr -d '"')
+            echo $DB_PASSWORD
+            echo $DB_HOST
+            if [ -z "$(ls -A html)" ];then sudo cp -r /wordpress/* /var/www/html/;fi
             sed -i "s/database_name_here/$DB_NAME/g" /var/www/html/wp-config.php
             sed -i "s/username_here/$DB_USER/g" /var/www/html/wp-config.php
             sed -i "s/password_here/$DB_PASSWORD/g" /var/www/html/wp-config.php
-            sed -i "s/localhost/$DB_PASSWORD/g" /var/www/html/wp-config.php
+            sed -i "s/localhost/$DB_HOST/g" /var/www/html/wp-config.php
             cd /
             sudo chown -R apache:apache /var/www/
             sed -i '/<Directory "\/var\/www\/html">/,/<\/Directory>/ s/AllowOverride None/AllowOverride all/' /etc/httpd/conf/httpd.conf

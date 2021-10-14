@@ -86,6 +86,10 @@ Resources:
           IpProtocol: tcp
           ToPort: 3306
           CidrIp: !Ref VPCCidr
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: "0.0.0.0/0"
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: -1
