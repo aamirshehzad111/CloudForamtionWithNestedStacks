@@ -68,5 +68,15 @@ Resources:
         PrivateSubnets: !Join [",", !Ref PrivateSubnets]
 
           
-
+  cloudFront:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: 
+      - LoadBalancerStack
+    Properties:
+      TemplateURL: "https://cf-templates-z0sc5gmdoroj-us-east-2.s3.us-east-2.amazonaws.com/cloudfront.yml"
+      TimeoutInMinutes: 30
+      # Parameters:
+      #   VPCId: !Ref VPCId
+      #   VPCCidr: !Ref VPCCidr
+      #   PrivateSubnets: !Join [",", !Ref PrivateSubnets]
         

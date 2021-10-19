@@ -87,3 +87,8 @@ Outputs:
     Value: !Ref DefaultTargetGroup
     Export:
       Name: !Sub "${Environment}-DefaultTargetGroup"    
+  LoadBalacnerDNS:
+    Description: A reference to a loab balancer dns
+    Value: !GetAtt LoadBalancer.DNSName
+    Export:
+      Name: !Sub "${Environment}-LoadBalacnerDNS"   

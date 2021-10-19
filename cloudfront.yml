@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  Distribution:
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        Origins:
+        - DomainName:
+            Fn::ImportValue:
+              Fn::Sub: "${Environment}-LoadBalacnerDNS" 
+          Id: CustomOrigin
+          CustomOriginConfig:
+            HTTPPort: '80'
+            HTTPSPort: '443'
+            OriginProtocolPolicy: http-only
+        Enabled: 'true'
+        Comment: comment
+        DefaultCacheBehavior:
+          TargetOriginId: CustomOrigin
+          SmoothStreaming: 'false'
+          ForwardedValues:
+            QueryString: 'false'
+            Cookies:
+              Forward: all
+          ViewerProtocolPolicy: allow-all
+        CustomErrorResponses:
+        - ErrorCode: '404'
+          ResponsePagePath: "/error-pages/404.html"
+          ResponseCode: '200'
+          ErrorCachingMinTTL: '30'
+        PriceClass: PriceClass_200
+        Restrictions:
+          GeoRestriction:
+            RestrictionType: whitelist
+            Locations:
+            - AQ
+            - CV
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: 'true'
+
+Outputs:
+  Domain:
+    Description: doamin of cloudfront
+    Value: !GetAtt Distribution.DomainName
+    Export:
+      Name: !Sub "${Environment}-DomainName"   

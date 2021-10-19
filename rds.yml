@@ -6,10 +6,12 @@ Parameters:
     Default: develop
   Engine:
     Type: String
-    Default: mysql
+    Default: aurora-mysql
+    AllowedValues:
+      - aurora-mysql
   EngineVersion:
     Type: String
-    Default: 5.7.21
+    Default: 5.7.mysql_aurora.2.09.1
   InstanceType:
     Type: String
     Default: db.t2.micro
@@ -18,7 +20,7 @@ Parameters:
     Default: 20
   PubliclyAccessible:
     Type: String
-    Default: false
+    Default: true
   StorageType:
     Type: String
     Default: gp2
@@ -49,28 +51,46 @@ Resources:
         - Key: Env
           Value: !Ref Environment
 
-  RDS:
+  Cluster:
+    DependsOn:
+      - SecurityGroup
+    Type: AWS::RDS::DBCluster
+    Properties:
+      DBClusterIdentifier: !Sub "wp-${Environment}-cluster" 
+      Engine: !Ref Engine
+      DBSubnetGroupName: !Ref SubnetGroup
+      EngineVersion: !Ref EngineVersion
+      DatabaseName: !Ref DatabaseName
+      MasterUsername: !Ref MasterUserName
+      MasterUserPassword: '{{resolve:ssm-secure:RDS_PASSWORD:1}}'
+      StorageEncrypted: false
+      PreferredBackupWindow: "06:59-07:29"
+      PreferredMaintenanceWindow: "sun:00:01-sun:00:31"
+      BackupRetentionPeriod: 7
+      VpcSecurityGroupIds: 
+        - !GetAtt SecurityGroup.GroupId
+      Tags:
+        - Key: Env
+          Value: !Ref Environment
+
+  Database1:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Delete
     DependsOn:
+      - Cluster
       - SubnetGroup
     Properties:
+      DBClusterIdentifier: !Ref Cluster
       AllocatedStorage: !Ref AllocatedStorage
       AutoMinorVersionUpgrade: !Ref AutoMinorVersionUpgrade
-      DBName: !Ref DatabaseName
       DBInstanceClass: !Ref InstanceType
       DBInstanceIdentifier: !Sub "wp-${Environment}"
       DBSubnetGroupName: !Ref SubnetGroup
       Engine: !Ref Engine
-      EngineVersion: !Ref EngineVersion
       StorageType: !Ref StorageType
-      MasterUsername: !Ref MasterUserName
-      MasterUserPassword: '{{resolve:ssm-secure:RDS_PASSWORD:1}}'
       PubliclyAccessible: !Ref PubliclyAccessible
       PreferredBackupWindow: "00:59-01:29"
       PreferredMaintenanceWindow: "fri:11:02-fri:11:32"
-      VPCSecurityGroups: 
-        - !Ref SecurityGroup
       Tags:
         - Key: Env
           Value: !Ref Environment
@@ -86,10 +106,10 @@ Resources:
           IpProtocol: tcp
           ToPort: 3306
           CidrIp: !Ref VPCCidr
-        # - IpProtocol: tcp
-        #   FromPort: 3306
-        #   ToPort: 3306
-        #   CidrIp: "0.0.0.0/0"
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: "0.0.0.0/0"
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: -1
@@ -103,10 +123,58 @@ Resources:
     Properties:
       Name: DB_HOST
       Type: String
-      Value: !GetAtt RDS.Endpoint.Address
+      Value: !GetAtt Cluster.Endpoint.Address
 
 Outputs:
   DbHost:
-    Value: !GetAtt RDS.Endpoint.Address
+    Value: !GetAtt Cluster.Endpoint.Address
     Export:
       Name: !Sub "${Environment}-DBHOST"
+    
+
+#Resources: 
+  # Database2:
+  #   Type: AWS::RDS::DBInstance
+  #   DeletionPolicy: Delete
+  #   DependsOn:
+  #     - Cluster
+  #     - SubnetGroup
+  #   Properties:
+  #     DBClusterIdentifier: !Ref Cluster
+  #     AutoMinorVersionUpgrade: !Ref AutoMinorVersionUpgrade
+  #     DBInstanceClass: !Ref InstanceType
+  #     DBInstanceIdentifier: !Sub "rds-develop-${Environment}"
+  #     DBSubnetGroupName: !Ref SubnetGroup
+  #     Engine: !Ref Engine
+  #     PreferredMaintenanceWindow: "fri:06:32-fri:07:02"
+  #     Tags:
+  #       - Key: Env
+  #         Value: !Ref Environment
+
+
+#existed
+  # RDS:
+  #   Type: AWS::RDS::DBInstance
+  #   DeletionPolicy: Delete
+  #   DependsOn:
+  #     - SubnetGroup
+  #   Properties:
+  #     AllocatedStorage: !Ref AllocatedStorage
+  #     AutoMinorVersionUpgrade: !Ref AutoMinorVersionUpgrade
+  #     DBName: !Ref DatabaseName
+  #     DBInstanceClass: !Ref InstanceType
+  #     DBInstanceIdentifier: !Sub "wp-${Environment}"
+  #     DBSubnetGroupName: !Ref SubnetGroup
+  #     Engine: !Ref Engine
+  #     EngineVersion: !Ref EngineVersion
+  #     StorageType: !Ref StorageType
+  #     MasterUsername: !Ref MasterUserName
+  #     MasterUserPassword: '{{resolve:ssm-secure:RDS_PASSWORD:1}}'
+  #     PubliclyAccessible: !Ref PubliclyAccessible
+  #     PreferredBackupWindow: "00:59-01:29"
+  #     PreferredMaintenanceWindow: "fri:11:02-fri:11:32"
+  #     VPCSecurityGroups: 
+  #       - !Ref SecurityGroup
+  #     Tags:
+  #       - Key: Env
+  #         Value: !Ref Environment
