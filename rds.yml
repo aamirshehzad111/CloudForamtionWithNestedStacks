@@ -14,7 +14,7 @@ Parameters:
     Default: 5.7.mysql_aurora.2.09.1
   InstanceType:
     Type: String
-    Default: db.t2.micro
+    Default: db.t3.medium
   AllocatedStorage:
     Type: Number
     Default: 20
@@ -81,15 +81,12 @@ Resources:
       - SubnetGroup
     Properties:
       DBClusterIdentifier: !Ref Cluster
-      AllocatedStorage: !Ref AllocatedStorage
       AutoMinorVersionUpgrade: !Ref AutoMinorVersionUpgrade
       DBInstanceClass: !Ref InstanceType
       DBInstanceIdentifier: !Sub "wp-${Environment}"
       DBSubnetGroupName: !Ref SubnetGroup
       Engine: !Ref Engine
-      StorageType: !Ref StorageType
       PubliclyAccessible: !Ref PubliclyAccessible
-      PreferredBackupWindow: "00:59-01:29"
       PreferredMaintenanceWindow: "fri:11:02-fri:11:32"
       Tags:
         - Key: Env
