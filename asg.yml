@@ -162,9 +162,9 @@ Resources:
             mkdir -p /var/www/html
             mount -t efs ${EfsId}:/ /var/www/html
             DB_NAME=${DatabaseName}
-            DB_PASSWORD=$(aws ssm get-parameter --name 'RDS_PASSWORD' --with-decryption --query 'Parameter.Value' --region=us-east-1)
+            DB_PASSWORD=$(aws ssm get-parameter --name 'RDS_PASSWORD' --with-decryption --query 'Parameter.Value' --region=us-east-2)
             DB_USER=${MasterUserName}
-            DB_HOST=$(aws ssm get-parameter --name 'DB_HOST' --query 'Parameter.Value' --region=us-east-1)
+            DB_HOST=$(aws ssm get-parameter --name 'DB_HOST' --query 'Parameter.Value' --region=us-east-2)
             sudo yum install -y httpd
             sudo systemctl start httpd
             sudo systemctl enable httpd

@@ -1,4 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  Environment:
+    Type: String
+    Default: develop
 Resources:
   Distribution:
     Type: 'AWS::CloudFront::Distribution'
@@ -8,13 +12,13 @@ Resources:
         - DomainName:
             Fn::ImportValue:
               Fn::Sub: "${Environment}-LoadBalacnerDNS" 
-          Id: CustomOrigin
+          Id: AlbCustomOrigin
           CustomOriginConfig:
             HTTPPort: '80'
             HTTPSPort: '443'
             OriginProtocolPolicy: http-only
         Enabled: 'true'
-        Comment: comment
+        Comment: cloudfront on top of alb
         DefaultCacheBehavior:
           TargetOriginId: CustomOrigin
           SmoothStreaming: 'false'
@@ -29,12 +33,12 @@ Resources:
           ResponseCode: '200'
           ErrorCachingMinTTL: '30'
         PriceClass: PriceClass_200
-        Restrictions:
-          GeoRestriction:
-            RestrictionType: whitelist
-            Locations:
-            - AQ
-            - CV
+        # Restrictions:
+        #   GeoRestriction:
+        #     RestrictionType: whitelist
+        #     Locations:
+        #     - AQ
+        #     - CV
         ViewerCertificate:
           CloudFrontDefaultCertificate: 'true'
 
