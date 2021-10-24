@@ -4,10 +4,39 @@ Parameters:
     Type: String
     Default: develop
 Resources:
+WebACL: 
+  Type: "AWS::WAF::WebACL"
+  Properties: 
+    Name: "WebACL to with three rules"
+    DefaultAction: 
+      Type: "ALLOW"
+    MetricName: "WebACL"
+    Rules: 
+      - 
+        Action: 
+          Type: "BLOCK"
+        Priority: 1
+        RuleId: 
+          Ref: "MyRule"
+      - 
+        Action: 
+          Type: "BLOCK"
+        Priority: 2
+        RuleId: 
+          Ref: "BadReferersRule"
+      - 
+        Action: 
+          Type: "BLOCK"
+        Priority: 3
+        RuleId: 
+          Ref: "SqlInjRule"
+          
   Distribution:
     Type: 'AWS::CloudFront::Distribution'
     Properties:
       DistributionConfig:
+      WebACLId: 
+        Ref: "WebACL"
         Origins:
         - DomainName:
             Fn::ImportValue:
@@ -33,12 +62,6 @@ Resources:
           ResponseCode: '200'
           ErrorCachingMinTTL: '30'
         PriceClass: PriceClass_200
-        # Restrictions:
-        #   GeoRestriction:
-        #     RestrictionType: whitelist
-        #     Locations:
-        #     - AQ
-        #     - CV
         ViewerCertificate:
           CloudFrontDefaultCertificate: 'true'
 

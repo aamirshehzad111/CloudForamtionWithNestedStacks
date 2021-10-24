@@ -215,3 +215,65 @@ Resources:
       - Key: Env
         Value: !Ref Environment
         PropagateAtLaunch: true
+
+  AutoScalingGroupScaleOutPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      EstimatedInstanceWarmup: 90
+      MetricAggregationType: Average
+      PolicyType: StepScaling 
+      StepAdjustments:
+      - MetricIntervalLowerBound: 0
+        ScalingAdjustment: 1
+
+  AutoScalingGroupScaleInPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      EstimatedInstanceWarmup: 90
+      MetricAggregationType: Average
+      PolicyType: StepScaling 
+      StepAdjustments:
+      - MetricIntervalUpperBound: 0
+        ScalingAdjustment: -1
+
+  CpuAlarmUp:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${Environment}-CPUAlarmUp
+      DatapointsToAlarm: 1
+      AlarmDescription: Trigger scaling based on cpu
+      Namespace: AWS/ECS
+      MetricName: CPUUtilization
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref AutoScalingGroup
+      EvaluationPeriods: 1
+      Period: 300
+      Statistic: 'Average'
+      Threshold: !Ref CPUScalingUpThreshold
+      AlarmActions:
+        - !Ref AutoScalingGroupScaleOutPolicy
+
+  CpuAlarmDown:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${Environment}-CPUAlarmDown
+      DatapointsToAlarm: 1
+      AlarmDescription: Trigger scaling based on cpu
+      Namespace: AWS/ECS
+      MetricName: CPUUtilization
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref AutoScalingGroup
+      EvaluationPeriods: 1
+      Period: 300
+      Statistic: 'Average'
+      Threshold: !Ref CPUScalingDownThreshold
+      AlarmActions:
+        - !Ref AutoScalingGroupScaleInPolicy
